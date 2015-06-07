@@ -104,7 +104,7 @@ void ScanBootSector()
 		FAT_ONE_OFFSET,
 		FAT_TWO_OFFSET,
 		ROOTDIR_OFFSET,
-		DATA_OFFSET,);
+		DATA_OFFSET);
 }
 
 /*日期*/
@@ -431,7 +431,7 @@ int WriteFat()
 		perror("lseek failed");
 		return -1;
 	}
-	if(write(fd,fatbuf,512*250)<0)
+	if(write(fd,fatbuf,64*SECTOR_SIZE)<0)
 	{
 		perror("read failed");
 		return -1;
@@ -441,7 +441,7 @@ int WriteFat()
 		perror("lseek failed");
 		return -1;
 	}
-	if((write(fd,fatbuf,512*250))<0)
+	if((write(fd,fatbuf,64*SECTOR_SIZE))<0)
 	{
 		perror("read failed");
 		return -1;
@@ -459,7 +459,7 @@ int ReadFat()
 		perror("lseek failed");
 		return -1;
 	}
-	if(read(fd,fatbuf,512*250)<0)
+	if(read(fd,fatbuf,64*SECTOR_SIZE)<0)
 	{
 		perror("read failed");
 		return -1;

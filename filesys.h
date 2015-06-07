@@ -108,7 +108,7 @@ struct Entry *curdir = NULL;//当前所在的目录，默认NULL表示位于根�
 int dirno = 0;/*代表目录的层数*/
 struct Entry* fatherdir[10];
 
-unsigned char fatbuf[512*250];  
+unsigned char fatbuf[64*SECTOR_SIZE];  
 
 #endif
 
