@@ -9,13 +9,18 @@
  */
 #define DIR_ENTRY_SIZE 32
 #define SECTOR_SIZE 512
-#define CLUSTER_SIZE 512*4                         
-#define FAT_ONE_OFFSET 512                       
-#define FAT_TWO_OFFSET 512+250*512                       
-#define ROOTDIR_OFFSET 512+250*512+250*512+512                     
-#define DATA_OFFSET 512+250*512+250*512+512*32        
+//#define CLUSTER_SIZE 512*4
+int CLUSTER_SIZE = -1;//簇的大小
+//#define FAT_ONE_OFFSET 512
+int FAT_ONE_OFFSET = -1;//FAT1的偏移量
+//#define FAT_TWO_OFFSET 512+250*512
+int FAT_TWO_OFFSET = -1;//FAT2的偏移量
+//#define ROOTDIR_OFFSET 512+250*512+250*512+512
+int ROOTDIR_OFFSET = -1;//根目录的偏移量
+//#define DATA_OFFSET 512+250*512+250*512+512*32
+int DATA_OFFSET = -1;//数据区的偏移量
 
-           
+
 
 /*属性位掩码*/
 #define ATTR_READONLY 0x01
@@ -37,17 +42,17 @@
 
 struct BootDescriptor_t{
 	unsigned char Oem_name[9]; /*0x03-0x0a*/
-	int BytesPerSector;        /*0x0b-0x0c*/
-	int SectorsPerCluster;     /*0x0d*/
-	int ReservedSectors;       /*0x0e-0x0f*/
-	int FATs;                  /*0x10*/
-	int RootDirEntries;        /*0x11-0x12*/
-	int LogicSectors;          /*0x13-0x14*/
-	int MediaType;             /*0x15*/
-	int SectorsPerFAT;         /*0x16-0x17*/
-	int SectorsPerTrack;       /*0x18-0x19*/
-	int Heads;                 /*0x1a-0x1b*/
-	int HiddenSectors;         /*0x1c-0x1d*/
+	int BytesPerSector;        /*0x0b-0x0c*///每个扇区的字节数
+	int SectorsPerCluster;     /*0x0d*///每簇扇区数
+	int ReservedSectors;       /*0x0e-0x0f*///保留扇区数
+	int FATs;                  /*0x10*///FAT表数
+	int RootDirEntries;        /*0x11-0x12*///根目录个数
+	int LogicSectors;          /*0x13-0x14*///逻辑扇区总数
+	int MediaType;             /*0x15*///介质描述符
+	int SectorsPerFAT;         /*0x16-0x17*///每个FAT表所占的扇区数
+	int SectorsPerTrack;       /*0x18-0x19*///每个柱面的扇区数目
+	int Heads;                 /*0x1a-0x1b*///磁盘每个盘面的磁头数
+	int HiddenSectors;         /*0x1c-0x1d*///隐藏扇区数目
 };
 
 /*目录项,一共32字节*/
@@ -63,7 +68,7 @@ struct Entry{
 	*N  N  A  D  V  S  H  R         N未使用
 	*/
 
-        //这是某种C语言黑科技，表示定义的变量按照unsigned char解析，但是所占空间只分配一个bit。。。并不知道上一任助教或者老师从哪里找来的这种黑科技
+	//这是某种C语言黑科技，表示定义的变量按照unsigned char解析，但是所占空间只分配一个bit。。。并不知道上一任助教或者老师从哪里找来的这种黑科技
 	unsigned char readonly:1;
 	unsigned char hidden:1;
 	unsigned char system:1;
