@@ -6,6 +6,7 @@
 #include<fcntl.h>
 #include<string.h>
 #include<ctype.h>
+#include<time.h>
 #include "filesys.h"
 
 /*
@@ -542,6 +543,13 @@ int fd_cf(char *filename,int size)
 	unsigned char c[DIR_ENTRY_SIZE];
 	int index,clustersize;
 	unsigned char buf[DIR_ENTRY_SIZE];
+	
+	//获取时间
+	time_t timer;
+	struct tm *tblock;
+	time(&timer);
+	tblock=localtime(&timer);
+	
 	pentry = (struct Entry*)malloc(sizeof(struct Entry));
 
 
@@ -633,6 +641,13 @@ int fd_cf(char *filename,int size)
 					c[29] = ((size & 0x0000ff00)>>8);
 					c[30] = ((size& 0x00ff0000)>>16);
 					c[31] = ((size& 0xff000000)>>24);
+					
+					/*写时间*/
+					c[22] = ((tblock->tm_min << 5) | ((tblock->tm_sec)>>1)) & 0x000000ff;
+					c[23] = (((tblock->tm_min << 5) | (tblock->tm_hour << 11)) & 0x0000ff00)>>8;
+					/*写日期*/
+					c[24] = ((tblock->tm_mon + 1) << 5) | tblock->tm_mday;
+					c[25] = (((tblock->tm_year-80)<<1)|(tblock->tm_mon + 1) >>3);
 
 					/*还有很多内容并没有写入，大家请自己补充*/
 					/*而且这里还有个问题，就是对于目录表项的值为00的情况处理的不好*/
@@ -687,15 +702,23 @@ int fd_cf(char *filename,int size)
 						c[i]=' ';
 
 					c[11] = 0x01;
-
+					
 					c[26] = (clusterno[0] &  0x00ff);
 					c[27] = ((clusterno[0] & 0xff00)>>8);
-
+					
 					c[28] = (size &  0x000000ff);
 					c[29] = ((size & 0x0000ff00)>>8);
 					c[30] = ((size& 0x00ff0000)>>16);
 					c[31] = ((size& 0xff000000)>>24);
-
+					
+					
+					/*写时间*/
+					c[22] = ((tblock->tm_min << 5) | ((tblock->tm_sec)>>1)) & 0x000000ff;
+					c[23] = (((tblock->tm_min << 5) | (tblock->tm_hour << 11)) & 0x0000ff00)>>8;
+					/*写日期*/
+					c[24] = ((tblock->tm_mon + 1) << 5) | tblock->tm_mday;
+					c[25] = (((tblock->tm_year-80)<<1)|(tblock->tm_mon + 1) >>3);
+					
 					if(lseek(fd,offset,SEEK_SET)<0)
 						perror("lseek fd_cf failed");
 					if(write(fd,&c,DIR_ENTRY_SIZE)<0)

@@ -106,7 +106,7 @@ int fd;
 struct BootDescriptor_t bdptor;
 struct Entry *curdir = NULL;//当前所在的目录，默认NULL表示位于根目录
 int dirno = 0;/*代表目录的层数*/
-struct Entry* fatherdir[10];
+struct Entry* fatherdir[10];//不应该采用这样的方法，应该在目录下新建. ..目录项
 
 unsigned char fatbuf[64*SECTOR_SIZE];  
 
