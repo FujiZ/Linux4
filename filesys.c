@@ -457,7 +457,7 @@ int WriteFat()
 		return -1;
 	}
 	//对于每个FAT表，移到对应位置并写入
-	for(int i=0;i<bdptor.FATs;++i){
+	for(i=0;i<bdptor.FATs;++i){
 		if(write(fd,fatbuf,bdptor.SectorsPerFAT*SECTOR_SIZE)<0){
 			perror("read failed");
 			return -1;
