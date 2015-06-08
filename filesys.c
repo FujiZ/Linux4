@@ -427,6 +427,7 @@ void ClearFatCluster(unsigned short cluster)
 */
 int WriteFat()
 {
+	/*
 	if(lseek(fd,FAT_ONE_OFFSET,SEEK_SET)<0)
 	{
 		perror("lseek failed");
@@ -446,6 +447,22 @@ int WriteFat()
 	{
 		perror("read failed");
 		return -1;
+	}
+	*/
+	int i=0;
+	//首先移到第一个FAT表的位置
+	if(lseek(fd,FAT_ONE_OFFSET,SEEK_SET)<0)
+	{
+		perror("lseek failed");
+		return -1;
+	}
+	//对于每个FAT表，移到对应位置并写入
+	for(int i=0;i<bdptor.FATs;++i){
+		if(write(fd,fatbuf,bdptor.SectorsPerFAT*SECTOR_SIZE)<0){
+			perror("read failed");
+			return -1;
+		}
+		//在write之后读写位置会自动往后移动
 	}
 	return 1;
 }
