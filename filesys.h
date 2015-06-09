@@ -81,7 +81,8 @@ struct Entry{
 int fd_ls();
 int fd_cd(char *dir);
 int fd_df(char *file_name);
-int fd_cf(char *file_name,int size);
+int fd_cf(char *file_name,int size,int mode);
+int fd_mkdir(char *dir_name);
 
 void findDate(unsigned short *year,
 			  unsigned short *month,
@@ -106,7 +107,8 @@ int fd;
 struct BootDescriptor_t bdptor;
 struct Entry *curdir = NULL;//当前所在的目录，默认NULL表示位于根目录
 int dirno = 0;/*代表目录的层数*/
-struct Entry* fatherdir[10];//不应该采用这样的方法，应该在目录下新建. ..目录项
+//可否用链表的形式来表示父目录呢？
+struct Entry* fatherdir[10]={NULL};
 
 unsigned char fatbuf[64*SECTOR_SIZE];  
 

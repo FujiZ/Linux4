@@ -384,6 +384,9 @@ int fd_cd(char *dir)
 		return -1;
 	}
 	dirno ++;
+	//修复内存泄漏问题
+	if(fatherdir[dirno])
+		free(fatherdir[dirno]);
 	fatherdir[dirno] = curdir;
 	curdir = pentry;
 	return 1;
@@ -551,7 +554,7 @@ size，    类型：int，文件的大小
 *返回值：1，成功；-1，失败
 *功能：在当前目录下创建文件
 */
-int fd_cf(char *filename,int size)
+int fd_cf(char *filename,int size,int mode)
 {
 
 	struct Entry *pentry;
@@ -575,7 +578,7 @@ int fd_cf(char *filename,int size)
 	if(size % (CLUSTER_SIZE) != 0)
 		clustersize ++;
 
-	//扫描根目录，是否已存在该文件名
+	//扫描根目录，是否已存在该文件名(应包括目录和文件)
 	ret = ScanEntry(filename,pentry,0);
 	if (ret<0)
 	{
@@ -647,7 +650,7 @@ int fd_cf(char *filename,int size)
 					for(;i<=10;i++)
 						c[i]=' ';
 
-					c[11] = 0x01;
+					c[11] = mode?0x10:0x00;
 
 					/*写第一簇的值*/
 					c[26] = (clusterno[0] &  0x00ff);
@@ -718,7 +721,7 @@ int fd_cf(char *filename,int size)
 					for(;i<=10;i++)
 						c[i]=' ';
 
-					c[11] = 0x01;
+					c[11] = mode?0x10:0x00;
 					
 					c[26] = (clusterno[0] &  0x00ff);
 					c[27] = ((clusterno[0] & 0xff00)>>8);
@@ -764,6 +767,15 @@ int fd_cf(char *filename,int size)
 
 }
 
+/*
+*参数：dir_name，类型：char，创建文件夹的名称
+*返回值：1，成功；-1，失败
+*功能：在当前目录下创建文件夹
+*/
+int fd_mkdir(char *dir_name){
+	return fd_cf(dir_name,RootDirEntries*DIR_ENTRY_SIZE,1);
+}
+
 void do_usage()
 {
 	printf("please input a command, including followings:\n\tls\t\t\tlist all files\n\tcd <dir>\t\tchange direcotry\n\tcf <filename> <size>\tcreate a file\n\tdf <file>\t\tdelete a file\n\texit\t\t\texit this system\n");
@@ -805,7 +817,11 @@ int main()
 			scanf("%s", name);
 			scanf("%s", input);
 			size = atoi(input);
-			fd_cf(name,size);
+			fd_cf(name,size,0);
+		}
+		else if(strcmp(input, "mkdir") == 0){
+			scanf("%s", name);
+			fd_mkdir(name);
 		}
 		else
 			do_usage();
