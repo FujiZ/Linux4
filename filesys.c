@@ -514,15 +514,13 @@ int fd_df(char *filename)
 
 	/*清除fat表项*/
 	seed = pentry->FirstCluster;
-	while((next = GetFatCluster(seed))!=0xffff)
-	{
-		ClearFatCluster(seed);
-		seed = next;
-
+	if(seed!=0){
+		while((next = GetFatCluster(seed))!=0xffff){
+			ClearFatCluster(seed);
+			seed = next;
+		}
+		ClearFatCluster( seed );
 	}
-
-	ClearFatCluster( seed );
-
 	/*清除目录表项*/
 	c=0xe5;//e5表示该目录项可用
 
@@ -554,6 +552,7 @@ size，    类型：int，文件的大小
 *返回值：1，成功；-1，失败
 *功能：在当前目录下创建文件
 */
+//创建dir时将size设为0
 int fd_cf(char *filename,int size,int mode)
 {
 
@@ -661,7 +660,6 @@ int fd_cf(char *filename,int size,int mode)
 					c[29] = ((size & 0x0000ff00)>>8);
 					c[30] = ((size& 0x00ff0000)>>16);
 					c[31] = ((size& 0xff000000)>>24);
-					
 					/*写时间*/
 					c[22] = ((tblock->tm_min << 5) | ((tblock->tm_sec)>>1)) & 0x000000ff;
 					c[23] = (((tblock->tm_min << 5) | (tblock->tm_hour << 11)) & 0x0000ff00)>>8;
@@ -731,7 +729,6 @@ int fd_cf(char *filename,int size,int mode)
 					c[30] = ((size& 0x00ff0000)>>16);
 					c[31] = ((size& 0xff000000)>>24);
 					
-					
 					/*写时间*/
 					c[22] = ((tblock->tm_min << 5) | ((tblock->tm_sec)>>1)) & 0x000000ff;
 					c[23] = (((tblock->tm_min << 5) | (tblock->tm_hour << 11)) & 0x0000ff00)>>8;
@@ -773,7 +770,7 @@ int fd_cf(char *filename,int size,int mode)
 *功能：在当前目录下创建文件夹
 */
 int fd_mkdir(char *dir_name){
-	return fd_cf(dir_name,RootDirEntries*DIR_ENTRY_SIZE,1);
+	return fd_cf(dir_name,bdptor.RootDirEntries*DIR_ENTRY_SIZE,1);
 }
 
 void do_usage()
