@@ -671,12 +671,23 @@ int fd_cf(char *filename,int size,int mode)
 					/*而且这里还有个问题，就是对于目录表项的值为00的情况处理的不好*/
 					if(lseek(fd,offset,SEEK_SET)<0)
 						perror("lseek fd_cf failed");
-					if(write(fd,&c,DIR_ENTRY_SIZE)<0)
+					if(write(fd,c,DIR_ENTRY_SIZE)<0)
 						perror("write failed");
-
-
-
-
+						
+					//处理目录表项的值为00的情况
+					if(buf[0]==0x00){
+						if(write(fd,buf,DIR_ENTRY_SIZE)<0)
+							perror("write failed");
+					}
+					//如果是要创建目录的话，应该将对应簇的第一条初始化
+					if(mode){
+						buf[0]=0x00;
+						cluster_addr = (clusterno[0] -2 )*CLUSTER_SIZE + DATA_OFFSET;
+						if((ret= lseek(fd,cluster_addr,SEEK_SET))<0)
+							perror("lseek cluster_addr failed");
+						if(write(fd,buf,DIR_ENTRY_SIZE)<0)
+							perror("write failed");
+					}
 					free(pentry);
 					if(WriteFat()<0)
 						exit(1);
@@ -738,12 +749,25 @@ int fd_cf(char *filename,int size,int mode)
 					
 					if(lseek(fd,offset,SEEK_SET)<0)
 						perror("lseek fd_cf failed");
-					if(write(fd,&c,DIR_ENTRY_SIZE)<0)
+					if(write(fd,c,DIR_ENTRY_SIZE)<0)
 						perror("write failed");
-
-
-
-
+						
+					//处理目录表项的值为00的情况
+					if(buf[0]==0x00){
+						if(write(fd,buf,DIR_ENTRY_SIZE)<0)
+							perror("write failed");
+					}
+					
+					//如果是要创建目录的话，应该将对应簇的第一条初始化
+					if(mode){
+						buf[0]=0x00;
+						cluster_addr = (clusterno[0] -2 )*CLUSTER_SIZE + DATA_OFFSET;
+						if((ret= lseek(fd,cluster_addr,SEEK_SET))<0)
+							perror("lseek cluster_addr failed");
+						if(write(fd,buf,DIR_ENTRY_SIZE)<0)
+							perror("write failed");
+					}
+					
 					free(pentry);
 					if(WriteFat()<0)
 						exit(1);
@@ -770,7 +794,7 @@ int fd_cf(char *filename,int size,int mode)
 *功能：在当前目录下创建文件夹
 */
 int fd_mkdir(char *dir_name){
-	return fd_cf(dir_name,bdptor.RootDirEntries*DIR_ENTRY_SIZE,1);
+	return fd_cf(dir_name,DIR_ENTRY_SIZE,1);
 }
 
 void do_usage()
