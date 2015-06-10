@@ -582,7 +582,7 @@ int fd_cf(char *filename,int size,int mode)
 	if (ret<0)
 	{
 		/*查询fat表，找到空白簇，保存在clusterno[]中*/
-		for(cluster=2;cluster<1000;cluster++)
+		for(cluster=3;cluster<1000;cluster++)
 		{
 			index = cluster *2;
 			if(fatbuf[index]==0x00&&fatbuf[index+1]==0x00)
