@@ -7,6 +7,7 @@
 #include<string.h>
 #include<ctype.h>
 #include<time.h>
+#include<limits.h>
 #include "filesys.h"
 
 /*
@@ -166,8 +167,10 @@ int GetEntry(struct Entry *pentry)
 		perror("read entry failed");
 	count += ret;
 
-	if(buf[0]==0xe5 || buf[0]== 0x00)
+	if(buf[0]==0xe5)
 		return -1*count;
+	else if(buf[0]== 0x00)
+		return INT_MIN;
 	else
 	{
 		/*长文件名，忽略掉*/
@@ -494,24 +497,48 @@ int ReadFat()
 *返回值：1，成功；-1，失败
 *功能;删除当前目录下的文件
 */
-int fd_df(char *filename)
+//要特判.和..的情况，对于此种直接return或报错
+int fd_df(char *filename,int mode)
 {
-	struct Entry *pentry;
-	int ret;
+	struct Entry *pentry,*sentry;
+	int ret,sret;
+	int cluster_addr;
 	unsigned char c;
 	unsigned short seed,next;
 
 	pentry = (struct Entry*)malloc(sizeof(struct Entry));
-
 	/*扫描当前目录查找文件*/
-	ret = ScanEntry(filename,pentry,0);
+	ret = ScanEntry(filename,pentry,mode);
 	if(ret<0)
 	{
-		printf("no such file\n");
+		printf("no such file or directory\n");
 		free(pentry);
 		return -1;
 	}
-
+	//如果要删除目录，首先要查询该目录下有没有其他文件或文件夹
+	if(mode){
+		if(!strcmp(filename,".")||!strcmp(filename,"..")){
+			printf("Can not remove . or .. directory\n");
+			free(pentry);
+			return -1;
+		}
+		cluster_addr = DATA_OFFSET + (pentry->FirstCluster -2)*CLUSTER_SIZE;
+		if((sret = lseek(fd,cluster_addr,SEEK_SET))<0)
+			perror("lseek cluster_addr failed");
+		offset= cluster_addr;
+		
+		sentry = (struct Entry*)malloc(sizeof(struct Entry));
+		while(offset<cluster_addr + CLUSTER_SIZE)
+		{
+			sret= GetEntry(sentry);
+			offset += abs(sret);
+			if(sret&&strcmp((char*)sentry->short_name,".")&&strcmp((char*)sentry->short_name,"..")){//意味着该目录下有其他文件或文件夹
+				printf("Can not remove %s which contains other files\n",filename);
+				free(sentry);
+				return -1;
+			}
+		}
+	}
 	/*清除fat表项*/
 	seed = pentry->FirstCluster;
 	if(seed!=0){
@@ -540,6 +567,7 @@ int fd_df(char *filename)
 	perror("write failed");*/
 
 	free(pentry);
+	free(sentry);
 	if(WriteFat()<0)
 		exit(1);
 	return 1;
@@ -656,10 +684,18 @@ int fd_cf(char *filename,int size,int mode)
 					c[27] = ((clusterno[0] & 0xff00)>>8);
 
 					/*写文件的大小*/
-					c[28] = (size &  0x000000ff);
-					c[29] = ((size & 0x0000ff00)>>8);
-					c[30] = ((size& 0x00ff0000)>>16);
-					c[31] = ((size& 0xff000000)>>24);
+					if(mode){
+						c[28] = 0;
+						c[29] = 0;
+						c[30] = 0;
+						c[31] = 0;
+					}
+					else{
+						c[28] = (size &  0x000000ff);
+						c[29] = ((size & 0x0000ff00)>>8);
+						c[30] = ((size& 0x00ff0000)>>16);
+						c[31] = ((size& 0xff000000)>>24);
+					}
 					/*写时间*/
 					c[22] = ((tblock->tm_min << 5) | ((tblock->tm_sec)>>1)) & 0x000000ff;
 					c[23] = (((tblock->tm_min << 5) | (tblock->tm_hour << 11)) & 0x0000ff00)>>8;
@@ -735,10 +771,18 @@ int fd_cf(char *filename,int size,int mode)
 					c[26] = (clusterno[0] &  0x00ff);
 					c[27] = ((clusterno[0] & 0xff00)>>8);
 					
-					c[28] = (size &  0x000000ff);
-					c[29] = ((size & 0x0000ff00)>>8);
-					c[30] = ((size& 0x00ff0000)>>16);
-					c[31] = ((size& 0xff000000)>>24);
+					if(mode){
+						c[28] = 0;
+						c[29] = 0;
+						c[30] = 0;
+						c[31] = 0;
+					}
+					else{
+						c[28] = (size &  0x000000ff);
+						c[29] = ((size & 0x0000ff00)>>8);
+						c[30] = ((size& 0x00ff0000)>>16);
+						c[31] = ((size& 0xff000000)>>24);
+					}
 					
 					/*写时间*/
 					c[22] = ((tblock->tm_min << 5) | ((tblock->tm_sec)>>1)) & 0x000000ff;
@@ -797,6 +841,10 @@ int fd_mkdir(char *dir_name){
 	return fd_cf(dir_name,DIR_ENTRY_SIZE,1);
 }
 
+int fd_rmdir(char *dir_name){
+	return fd_df(dir_name,1);
+}
+
 void do_usage()
 {
 	printf("please input a command, including followings:\n\tls\t\t\tlist all files\n\tcd <dir>\t\tchange direcotry\n\tcf <filename> <size>\tcreate a file\n\tdf <file>\t\tdelete a file\n\texit\t\t\texit this system\n");
@@ -843,6 +891,10 @@ int main()
 		else if(strcmp(input, "mkdir") == 0){
 			scanf("%s", name);
 			fd_mkdir(name);
+		}
+		else if(strcmp(input, "rmdir") == 0){
+			scanf("%s", name);
+			fd_rmdir(name);
 		}
 		else
 			do_usage();

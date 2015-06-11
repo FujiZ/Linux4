@@ -80,9 +80,10 @@ struct Entry{
 //下面这些函数的作用我写到.c文件中了。
 int fd_ls();
 int fd_cd(char *dir);
-int fd_df(char *file_name);
+int fd_df(char *file_name,int mode);
 int fd_cf(char *file_name,int size,int mode);
 int fd_mkdir(char *dir_name);
+int fd_rmdir(char *dir_name);
 
 void findDate(unsigned short *year,
 			  unsigned short *month,
