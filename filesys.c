@@ -372,8 +372,9 @@ int fd_cd(char *dir)
 	if(!strcmp(dir,"..") && curdir!=NULL)
 	{
 	  //fatherdir 用于保存父目录信息。
-		curdir = fatherdir[dirno];
-		dirno--; 
+		//curdir = fatherdir[dirno];
+		//dirno--; 
+		curdir=StackPop(&dirList);
 		return 1;
 	}
 	//注意此处有内存泄露
@@ -386,11 +387,15 @@ int fd_cd(char *dir)
 		free(pentry);
 		return -1;
 	}
-	dirno ++;
+	//dirno ++;
 	//修复内存泄漏问题
+	/*
 	if(fatherdir[dirno])
 		free(fatherdir[dirno]);
 	fatherdir[dirno] = curdir;
+	curdir = pentry;
+	*/
+	StackPush(&dirList,curdir);
 	curdir = pentry;
 	return 1;
 }
@@ -849,6 +854,27 @@ int fd_rmdir(char *dir_name){
 void do_usage()
 {
 	printf("please input a command, including followings:\n\tls\t\t\tlist all files\n\tcd <dir>\t\tchange direcotry\n\tcf <filename> <size>\tcreate a file\n\tdf <file>\t\tdelete a file\n\texit\t\t\texit this system\n");
+}
+
+int StackPush(struct EntryNode **list,struct Entry *value){
+	struct EntryNode* temNode;
+	temNode=(struct EntryNode*)malloc(sizeof(struct EntryNode));
+	temNode->value=value;
+	temNode->next=*list;
+	*list=temNode;
+	return 1;
+}
+
+struct Entry* StackPop(struct EntryNode **list){
+	struct Entry* temEntry;
+	struct EntryNode* temNode;
+	if(!*list)
+		return NULL;
+	temEntry=(*list)->value;
+	temNode=*list;
+	*list=(*list)->next;
+	free(temNode);
+	return temEntry;
 }
 
 

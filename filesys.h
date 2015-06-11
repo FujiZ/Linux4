@@ -77,6 +77,14 @@ struct Entry{
 	unsigned char archive:1;
 };
 
+struct EntryNode{
+	struct Entry *value;
+	struct EntryList *next;
+}
+//栈操作
+int StackPush(struct EntryNode **list,struct Entry *value);
+struct Entry* StackPop(struct EntryNode **list);
+
 //下面这些函数的作用我写到.c文件中了。
 int fd_ls();
 int fd_cd(char *dir);
@@ -107,9 +115,10 @@ void ClearFatCluster(unsigned short cluster);
 int fd;
 struct BootDescriptor_t bdptor;
 struct Entry *curdir = NULL;//当前所在的目录，默认NULL表示位于根目录
-int dirno = 0;/*代表目录的层数*/
+//int dirno = 0;/*代表目录的层数*/
 //可否用链表的形式来表示父目录呢？
-struct Entry* fatherdir[10]={NULL};
+struct EntryNode *dirList=NULL;
+//struct Entry* fatherdir[10]={NULL};
 
 unsigned char fatbuf[64*SECTOR_SIZE];  
 
