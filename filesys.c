@@ -298,7 +298,7 @@ int fd_ls()
 /*
 *参数：entryname 类型：char
 ：pentry    类型：struct Entry*
-：mode      类型：int，mode=1，为目录表项；mode=0，为文件
+：mode      类型：int，mode=1，为目录表项；mode=0，为文件;mode=2 , 为文件或目录表项
 *返回值：偏移值大于0，则成功；-1，则失败
 *功能：搜索当前目录，查找名为entryname的文件或目录项，如果没找到但会-1，找到了返回目标文件在硬盘中的偏移
 */
@@ -323,7 +323,7 @@ int ScanEntry (char *entryname,struct Entry *pentry,int mode)
 			ret = GetEntry(pentry);
 			offset +=abs(ret);
 
-			if(pentry->subdir == mode &&!strcmp((char*)pentry->short_name,uppername))
+			if((pentry->subdir == mode ||mode==2) &&!strcmp((char*)pentry->short_name,uppername))
 
 				return offset;
 
@@ -343,7 +343,7 @@ int ScanEntry (char *entryname,struct Entry *pentry,int mode)
 		{
 			ret= GetEntry(pentry);
 			offset += abs(ret);
-			if(pentry->subdir == mode &&!strcmp((char*)pentry->short_name,uppername))
+			if((pentry->subdir == mode||mode==2) &&!strcmp((char*)pentry->short_name,uppername))
 				return offset;
 		}
 		return -1;
@@ -371,9 +371,7 @@ int fd_cd(char *dir)
 	/*返回上一级目录*/
 	if(!strcmp(dir,"..") && curdir!=NULL)
 	{
-	  //fatherdir 用于保存父目录信息。
-		//curdir = fatherdir[dirno];
-		//dirno--; 
+		free(curdir);
 		curdir=StackPop(&dirList);
 		return 1;
 	}
@@ -387,14 +385,7 @@ int fd_cd(char *dir)
 		free(pentry);
 		return -1;
 	}
-	//dirno ++;
-	//修复内存泄漏问题
-	/*
-	if(fatherdir[dirno])
-		free(fatherdir[dirno]);
-	fatherdir[dirno] = curdir;
-	curdir = pentry;
-	*/
+
 	StackPush(&dirList,curdir);
 	curdir = pentry;
 	return 1;
@@ -612,7 +603,7 @@ int fd_cf(char *filename,int size,int mode)
 		clustersize ++;
 
 	//扫描根目录，是否已存在该文件名(应包括目录和文件)
-	ret = ScanEntry(filename,pentry,0);
+	ret = ScanEntry(filename,pentry,2);
 	if (ret<0)
 	{
 		/*查询fat表，找到空白簇，保存在clusterno[]中*/
@@ -853,7 +844,7 @@ int fd_rmdir(char *dir_name){
 
 void do_usage()
 {
-	printf("please input a command, including followings:\n\tls\t\t\tlist all files\n\tcd <dir>\t\tchange direcotry\n\tcf <filename> <size>\tcreate a file\n\tdf <file>\t\tdelete a file\n\texit\t\t\texit this system\n");
+	printf("please input a command, including followings:\n\tls\t\t\tlist all files\n\tcd <dir>\t\tchange direcotry\n\tcf <filename> <size>\tcreate a file\n\tdf <file>\t\tdelete a file\n\tmkdir <dir>\t\tcreate a dir\n\trmdir <dir>\t\tdelete a dir\n\texit\t\t\texit this system\n");
 }
 
 int StackPush(struct EntryNode **list,struct Entry *value){

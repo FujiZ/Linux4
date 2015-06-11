@@ -79,8 +79,8 @@ struct Entry{
 
 struct EntryNode{
 	struct Entry *value;
-	struct EntryList *next;
-}
+	struct EntryNode *next;
+};
 //栈操作
 int StackPush(struct EntryNode **list,struct Entry *value);
 struct Entry* StackPop(struct EntryNode **list);
@@ -115,10 +115,8 @@ void ClearFatCluster(unsigned short cluster);
 int fd;
 struct BootDescriptor_t bdptor;
 struct Entry *curdir = NULL;//当前所在的目录，默认NULL表示位于根目录
-//int dirno = 0;/*代表目录的层数*/
-//可否用链表的形式来表示父目录呢？
+//用链表形式来表示父目录
 struct EntryNode *dirList=NULL;
-//struct Entry* fatherdir[10]={NULL};
 
 unsigned char fatbuf[64*SECTOR_SIZE];  
 
