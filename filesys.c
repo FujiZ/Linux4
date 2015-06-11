@@ -167,10 +167,10 @@ int GetEntry(struct Entry *pentry)
 		perror("read entry failed");
 	count += ret;
 
-	if(buf[0]==0xe5)
+	if(buf[0]==0xe5||buf[0]== 0x00)
 		return -1*count;
 	else if(buf[0]== 0x00)
-		return INT_MIN;
+		return -1*DATA_OFFSET;
 	else
 	{
 		/*长文件名，忽略掉*/
@@ -502,7 +502,7 @@ int fd_df(char *filename,int mode)
 {
 	struct Entry *pentry,*sentry;
 	int ret,sret;
-	int cluster_addr;
+	int cluster_addr,offset;
 	unsigned char c;
 	unsigned short seed,next;
 
@@ -532,12 +532,14 @@ int fd_df(char *filename,int mode)
 		{
 			sret= GetEntry(sentry);
 			offset += abs(sret);
-			if(sret&&strcmp((char*)sentry->short_name,".")&&strcmp((char*)sentry->short_name,"..")){//意味着该目录下有其他文件或文件夹
+			if(sret>0&&strcmp((char*)sentry->short_name,".")&&strcmp((char*)sentry->short_name,"..")){//意味着该目录下有其他文件或文件夹
 				printf("Can not remove %s which contains other files\n",filename);
+				free(pentry);
 				free(sentry);
 				return -1;
 			}
 		}
+		free(sentry);
 	}
 	/*清除fat表项*/
 	seed = pentry->FirstCluster;
@@ -567,7 +569,6 @@ int fd_df(char *filename,int mode)
 	perror("write failed");*/
 
 	free(pentry);
-	free(sentry);
 	if(WriteFat()<0)
 		exit(1);
 	return 1;
@@ -879,7 +880,7 @@ int main()
 		else if(strcmp(input, "df") == 0)
 		{
 			scanf("%s", name);
-			fd_df(name);
+			fd_df(name,0);
 		}
 		else if(strcmp(input, "cf") == 0)
 		{

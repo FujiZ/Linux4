@@ -1,3 +1,4 @@
 #!/bin/bash
+mkdir /dev/sdb1
 mount -o umask=000 data /dev/sdb1
 chmod -R 777 /dev/sdb1
