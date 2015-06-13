@@ -167,7 +167,7 @@ int GetEntry(struct Entry *pentry)
 		perror("read entry failed");
 	count += ret;
 
-	if(buf[0]==0xe5||buf[0]== 0x00)
+	if(buf[0]==0xe5)
 		return -1*count;
 	else if(buf[0]== 0x00)
 		return -1*DATA_OFFSET;
@@ -179,8 +179,11 @@ int GetEntry(struct Entry *pentry)
 			if((ret = read(fd,buf,DIR_ENTRY_SIZE))<0)
 				perror("read root dir failed");
 			count += ret;
+			if(buf[0]== 0x00)
+				return -1*DATA_OFFSET;
 		}
-
+		if(buf[0]==0xe5)
+			return -1*count;
 		/*命名格式化，主义结尾的'\0'*/
 		for (i=0 ;i<=10;i++)
 			pentry->short_name[i] = buf[i];
