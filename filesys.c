@@ -543,15 +543,18 @@ int fd_df(char *filename,int mode)
 	/*清除fat表项*/
 	seed = pentry->FirstCluster;
 	if(seed!=0){
-		while((next = GetFatCluster(seed))!=0xffff){
-			ClearFatCluster(seed);
-			seed = next;
+		if(!mode){
+			while((next = GetFatCluster(seed))!=0xffff){
+				ClearFatCluster(seed);
+				seed = next;
+			}
+			ClearFatCluster( seed );
 		}
-		ClearFatCluster( seed );
+		else
+			ClearFatCluster( seed );
 	}
 	/*清除目录表项*/
 	c=0xe5;//e5表示该目录项可用
-
 	//现将文件指针定位到目录处，0x20等价于32，因为每条目录表项32bytes
 	if(lseek(fd,ret-0x20,SEEK_SET)<0)
 		perror("lseek fd_df failed");
@@ -717,10 +720,56 @@ int fd_cf(char *filename,int size,int mode)
 					}
 					//如果是要创建目录的话，应该将对应簇的第一条初始化
 					if(mode){
+						offset=(clusterno[0]-2)*CLUSTER_SIZE + DATA_OFFSET;
+            			//创建.
+            			c[0]=0x2e;
+            			for(i=1; i<=10; i++)
+               				c[i]=' ';
+            			c[11] = 0x10;
+            			/*写第一簇的值*/
+            			c[26] = (clusterno[0] &  0x00ff);
+            			c[27] = ((clusterno[0] & 0xff00)>>8);
+            			/*写文件的大小*/
+            			c[28] = 0;
+            			c[29] = 0;
+            			c[30] = 0;
+            			c[31] = 0;
+            			/*写时间*/
+						c[22] = ((tblock->tm_min << 5) | ((tblock->tm_sec)>>1)) & 0x000000ff;
+						c[23] = (((tblock->tm_min << 5) | (tblock->tm_hour << 11)) & 0x0000ff00)>>8;
+						/*写日期*/
+						c[24] = ((tblock->tm_mon + 1) << 5) | tblock->tm_mday;
+						c[25] = (((tblock->tm_year-80)<<1)|(tblock->tm_mon + 1) >>3);
+
+            			if(lseek(fd,offset,SEEK_SET)<0)
+                			perror("lseek fd_cf failed");
+            			if(write(fd,&c,DIR_ENTRY_SIZE)<0)
+                			perror("write failed");
+
+            			//创建..
+            			c[0]=0x2e;
+            			c[1]='.';
+            			for(i=2; i<=10; i++)
+               			 	c[i]=' ';
+            			c[11] = 0x10;
+						//curdir==null
+               		 	c[26]=0x00;
+               			c[27]=0x00;
+            			/*写文件的大小*/
+            			c[28] = 0;
+            			c[29] = 0;
+            			c[30] = 0;
+            			c[31] = 0;
+            			/*写时间*/
+						c[22] = ((tblock->tm_min << 5) | ((tblock->tm_sec)>>1)) & 0x000000ff;
+						c[23] = (((tblock->tm_min << 5) | (tblock->tm_hour << 11)) & 0x0000ff00)>>8;
+						/*写日期*/
+						c[24] = ((tblock->tm_mon + 1) << 5) | tblock->tm_mday;
+						c[25] = (((tblock->tm_year-80)<<1)|(tblock->tm_mon + 1) >>3);
+            			if(write(fd,&c,DIR_ENTRY_SIZE)<0)
+                			perror("write failed");
+						//添加EOF
 						buf[0]=0x00;
-						cluster_addr = (clusterno[0] -2 )*CLUSTER_SIZE + DATA_OFFSET;
-						if((ret= lseek(fd,cluster_addr,SEEK_SET))<0)
-							perror("lseek cluster_addr failed");
 						if(write(fd,buf,DIR_ENTRY_SIZE)<0)
 							perror("write failed");
 					}
@@ -804,10 +853,57 @@ int fd_cf(char *filename,int size,int mode)
 					
 					//如果是要创建目录的话，应该将对应簇的第一条初始化
 					if(mode){
+            			offset=(clusterno[0]-2)*CLUSTER_SIZE + DATA_OFFSET;
+            			//.
+            			c[0]=0x2e;
+            			for(i=1; i<=10; i++)
+               			 	c[i]=' ';
+            			c[11] = 0x10;
+            			/*写第一簇的值*/
+            			c[26] = (clusterno[0] &  0x00ff);
+            			c[27] = ((clusterno[0] & 0xff00)>>8);
+            			/*写文件的大小*/
+            			c[28] = 0;
+            			c[29] = 0;
+            			c[30] = 0;
+            			c[31] = 0;
+            			/*写时间*/
+						c[22] = ((tblock->tm_min << 5) | ((tblock->tm_sec)>>1)) & 0x000000ff;
+						c[23] = (((tblock->tm_min << 5) | (tblock->tm_hour << 11)) & 0x0000ff00)>>8;
+						/*写日期*/
+						c[24] = ((tblock->tm_mon + 1) << 5) | tblock->tm_mday;
+						c[25] = (((tblock->tm_year-80)<<1)|(tblock->tm_mon + 1) >>3);
+
+            			if(lseek(fd,offset,SEEK_SET)<0)
+                			perror("lseek fd_cf failed");
+            			if(write(fd,&c,DIR_ENTRY_SIZE)<0)
+                			perror("write failed");
+
+            			//..
+            			c[0]=0x2e;
+            			c[1]='.';
+            			for(i=2; i<=10; i++)
+               				 c[i]=' ';
+            			c[11] = 0x10;
+            			//curdir!=null
+                		c[26]=(curdir->FirstCluster & 0x00ff);
+                		c[27]=((curdir->FirstCluster & 0x00ff)>>8);
+
+            			/*写文件的大小*/
+            			c[28] = 0;
+            			c[29] = 0;
+            			c[30] = 0;
+            			c[31] = 0;
+            			/*写时间*/
+						c[22] = ((tblock->tm_min << 5) | ((tblock->tm_sec)>>1)) & 0x000000ff;
+						c[23] = (((tblock->tm_min << 5) | (tblock->tm_hour << 11)) & 0x0000ff00)>>8;
+						/*写日期*/
+						c[24] = ((tblock->tm_mon + 1) << 5) | tblock->tm_mday;
+						c[25] = (((tblock->tm_year-80)<<1)|(tblock->tm_mon + 1) >>3);
+            			if(write(fd,&c,DIR_ENTRY_SIZE)<0)
+                			perror("write failed");
+
 						buf[0]=0x00;
-						cluster_addr = (clusterno[0] -2 )*CLUSTER_SIZE + DATA_OFFSET;
-						if((ret= lseek(fd,cluster_addr,SEEK_SET))<0)
-							perror("lseek cluster_addr failed");
 						if(write(fd,buf,DIR_ENTRY_SIZE)<0)
 							perror("write failed");
 					}

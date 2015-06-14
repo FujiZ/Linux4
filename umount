@@ -1,2 +1,3 @@
 #!/bin/bash
 umount /dev/sdb1
+rmdir /dev/sdb1
