@@ -543,15 +543,11 @@ int fd_df(char *filename,int mode)
 	/*清除fat表项*/
 	seed = pentry->FirstCluster;
 	if(seed!=0){
-		if(!mode){
-			while((next = GetFatCluster(seed))!=0xffff){
-				ClearFatCluster(seed);
-				seed = next;
-			}
-			ClearFatCluster( seed );
+		while((next = GetFatCluster(seed))!=0xffff){
+			ClearFatCluster(seed);
+			seed = next;
 		}
-		else
-			ClearFatCluster( seed );
+		ClearFatCluster( seed );
 	}
 	/*清除目录表项*/
 	c=0xe5;//e5表示该目录项可用
